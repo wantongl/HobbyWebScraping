@@ -1,0 +1,2 @@
+# HobbyWebScraping
+Scrap lightnovel content
