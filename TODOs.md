@@ -1,18 +1,14 @@
-#TO DOs:
+# TO DOs:
 
-1.
-Instead of clicking the clear button for cleartext()
+1. Instead of clicking the clear button for cleartext()
 Maybe add in another option to clear by selecting all text content and paste rather than sendkeys()
 
-2.
-Extra optional feature end program when caught up to current chapter/final page.
+2. Extra optional feature end program when caught up to current chapter/final page.
 
-3.
-Since bing can only translate up to 5000 words.
+3. Since bing can only translate up to 5000 words.
 Another feature is to detect and split current chapter into multiple parts then translate them while keeping track.
 
-4.
-Problem:
+4. Problem:
 Bing audio itself sometimes stop translating or freeze up, not exactly sure what's causing it.
 Can be possibly caused by uncommon characters or maybe the word list is too long.
 The problem is not due to this program but with bing translator itself. Sometimes deleting previously translated
