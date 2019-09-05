@@ -7,14 +7,15 @@ from selenium.webdriver.support.ui import WebDriverWait                # Use for
 from selenium.webdriver.support import expected_conditions as EC       # -|
 
 # Parameters
-paramDict ={
-    "fullchapterurl"        :"https://www.uukanshu.com/b/71643/13068.html",
-    "baseurl"               :"https://www.uukanshu.com",
-    "language"              :"Chinese Simplified",
-    "webdriver"             :r"C:\Users\00\Downloads\geckodriver\geckodriver.exe", # Need path to selenium's webdriver (firefox/chrome)
-    "chaptersizefactor"     :2,          # Integer value 1 or more, Denominator for splitting the chapter into multiple parts (default: 1, translate full chapter)
-    "ChangeVoiceToMale"     :0,          # Optional, 0 to not change, 1 to change
-    "translateNextChapter"  :0,          # Optional, 0 to not read next chapter. Input n where n > 0 and n is an integer, to read n chapters
+KARGS ={
+    "CHAPTERURL"            :"https://www.uukanshu.com/b/71643/13068.html",
+    "BASEURL"               :"https://www.uukanshu.com",
+    "TRANSLATORURL"         :"https://www.bing.com/translator",
+    "LANGUAGE"              :"Chinese Simplified",
+    "WEBDRIVERPATH"         :r"{PUT PATH TO DRIVER HERE}\geckodriver.exe", # Path to selenium's webdriver (firefox/chrome)
+    "CHAPTERSIZEFACTOR"     :2,          # Integer value 1 or more, Denominator for splitting the chapter into multiple parts (default: 1, translate  chapter)
+    "CHANGEVOICETOMALE"     :0,          # Optional, 0 to not change, 1 to change
+    "TRANSLATENEXTCHAPTER"  :0,          # Optional, 0 to not read next chapter. Input n where n > 0 and n is an integer, to read n chapters
 }
 
 # Access Data/Content from these URL
@@ -23,7 +24,7 @@ class Parse:
         self.html = self.request(self, link).text                           # Shows html source as text
         self.data = self.SoupParseContent(self, self.request(self, link))   # Shows the whole content/story text (string)
         self.nextpage = self.nexturl(self, self.request(self, link))        # Shows the URL to the next page/chapter
-        self.splitdata = self.splitter(self, self.data, paramDict['chaptersizefactor']) # Shows story text (string) in a list
+        self.splitdata = self.splitter(self, self.data, KARGS['CHAPTERSIZEFACTOR']) # Shows story text (string) in a list
 
     @staticmethod
     def request(self, link):
@@ -62,105 +63,116 @@ class Parse:
         return result["href"]
 
 
-# Input text to the text field on bing
-def inputText(webdriverobj, translateText):
-    bingTextbox = webdriverobj.find_element_by_id("tta_input")
-    bingTextbox.send_keys(translateText)
-    print("Input Text Completed")
+class Browser:
 
-# Start audio translation
-def playaudio(webdriverobj):
-    playButton = webdriverobj.find_element_by_id("tta_playiconsrc")
-    playButton.click()
-    print("Starting To Translate Audio: ")
+    def __init__(self):
+        # initializer and instance attributes
+        self.webdriverobj = webdriver.Firefox(executable_path = KARGS['WEBDRIVERPATH'])
+        self.novel_parse = Parse(KARGS['CHAPTERURL'])  # Initialize Parse object of website
+
+        self.webdriverobj.get(KARGS['TRANSLATORURL'])
+
+    def wait(self, secs):
+        # Global wait, will produce exception if no element is found within 30 secs
+        self.webdriverobj.implicitly_wait(30)
+
+    def change_language(self, element_id_of_language_select = "tta_srcsl"):
+        lang_selector = Select(self.webdriverobj.find_element_by_id(element_id_of_language_select))    # Select drop off list
+        lang_selector.select_by_visible_text(KARGS['LANGUAGE'])                                        # Selecting based on text using variable lang
+        print("Language Selected: ", KARGS['LANGUAGE'])                                                # Output current task
+
+    def input_text(self, text, element_id_of_textarea):
+        # Input text to the text field on bing
+        bingTextbox = self.webdriverobj.find_element_by_id(element_id_of_textarea)
+        bingTextbox.send_keys(text)
+        print("Input Text Completed")
 
 
-# Find out when translation/audio stop
-def verifyAudioStop(webdriverobj):
+    def playaudio(self, element_id_of_playaudio):
+        # Start audio translation
+        playButton = self.webdriverobj.find_element_by_id(element_id_of_playaudio)
+        playButton.click()
+        print("Starting To Translate Audio: ")
 
-    WebDriverWait(webdriverobj, 300).until(                                         # Wait for element to appear
-        EC.presence_of_element_located((By.CSS_SELECTOR, "#t_srcplaycIcon.audio.audiofocus"))
+    # old "#t_srcplaycIcon.audio.audiofocus"
+    def verify_audio_stop(self, css_id):
+        # Find out when translation/audio stop
+        WebDriverWait(self.webdriverobj, 300).until(  # Wait for element to appear
+            EC.presence_of_element_located((By.CSS_SELECTOR, css_id))
         )
-    print("Audio Start")
+        print("Audio Start")
 
-    WebDriverWait(webdriverobj, 1200).until(                                        # Wait for element to disappear
-        EC.invisibility_of_element_located((By.CSS_SELECTOR, "#t_srcplaycIcon.audio.audiofocus"))   # Invis is slow, try to find a faster confirming method
+        WebDriverWait(self.webdriverobj, 1200).until(  # Wait for element to disappear
+            EC.invisibility_of_element_located((By.CSS_SELECTOR, css_id))
+            # Invis is slow, try to find a faster confirming method
         )
 
-    print("Audio Stop")
-
-# Clear text
-def cleartext(webdriverobj):
-   # (browser.find_element_by_id("t_edc")).click()           # Method 1, clicking the clear button on bing's website.
-    cleartextbox = webdriverobj.find_element_by_id("tta_input")   # Method 2, delete text without reloading bing translate
-    cleartextbox.clear()
-    print("Clear Text")
-
-# Main Wrapper function that accepts split data for input to text
-# then plays the audio, verify audio stopped, and clear text.
-def inputTextPlayClear(webdriverobj, splitstring):
-    # Due to the way the string is split by // (floor divide) there might be a tail with 1-2 characters
-    # This if statement is for efficiency by attaching the tail element to the previous element.
-    if len(splitstring) > 1 and len(splitstring[-1]) < len(splitstring[-2]) / 10:  # If the tail (last element) is less than 10% of the previous string
-        splitstring[-2] += splitstring[-1]                                         # attach last element to element before last and remove last element
-        splitstring.pop()
-
-    for x in range(len(splitstring)):                     # Input, play, verify, clear over split strings
-        inputText(webdriverobj, splitstring[x])
-        playaudio(webdriverobj)
-        verifyAudioStop(webdriverobj)
-        cleartext(webdriverobj)
+        print("Audio Stop")
 
 
-# Change voice to male (optional), default is female.
-# Only need to be set/run once at the beginning
-def changevoicegen(webdriverobj, flag):
-    if flag == 1:
-        (WebDriverWait(webdriverobj, 300).until(  # Wait for button to be clickable
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "#t_inauoption"))  # Click Voice Drag Down Option Button
-        )).click()
+    def clear_text(self, element_of_id_textarea):
+        # Clear text
+        # (browser.find_element_by_id("t_edc")).click()           # Method 1, clicking the clear button on bing's website.
+        clear_textbox = self.webdriverobj.find_element_by_id(element_of_id_textarea)  # Method 2, delete text without reloading bing translate
+        clear_textbox.clear()
+        print("Clear Text")
 
-        (WebDriverWait(webdriverobj, 300).until(  # Wait for button to be clickable
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "#t_genradio_M_0"))  # Click Male Voice radio button
-        )).click()
+    
+    def input_text_play_clear(self, splitstring, element_id_of_textarea="tta_input", element_id_of_playaudio="tta_playiconsrc", css_id="#tta_play_focus"):
+        # Main Wrapper function that accepts split data for input to text
+        # then plays the audio, verify audio stopped, and clear text.
+        # Due to the way the string is split by // (floor divide) there might be a tail with 1-2 characters
+        # This if statement is for efficiency by attaching the tail element to the previous element.
+        if len(splitstring) > 1 and len(splitstring[-1]) < len(
+                splitstring[-2]) / 10:  # If the tail (last element) is less than 10% of the previous string
+            splitstring[-2] += splitstring[-1]  # attach last element to element before last and remove last element
+            splitstring.pop()
 
-        print("Voice Changed to Male Completed")
+        for x in range(len(splitstring)):  # Input, play, verify, clear over split strings
+            self.input_text(splitstring[x],element_id_of_textarea)
+            self.playaudio(element_id_of_playaudio)
+            self.verify_audio_stop(css_id)
+            self.clear_text(element_id_of_textarea)
 
+""" # Depreciated because Bing don't got the option anymore.
+    # Leaving function as commented in case option returns.
+
+    def change_voice(self, flag):
+        # Change voice to male (optional), default is female.
+        # Only need to be set/run once at the beginning
+        if flag == 1:
+            (WebDriverWait(self.webdriverobj, 300).until(  # Wait for button to be clickable
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#t_inauoption"))  # Click Voice Drag Down Option Button
+            )).click()
+
+            (WebDriverWait(self.webdriverobj, 300).until(  # Wait for button to be clickable
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#t_genradio_M_0"))  # Click Male Voice radio button
+            )).click()
+
+            print("Voice Changed to Male Completed")
+"""
 
 # __Main__
 def main():
-
     # Below here is map out to bing translator, other translate website won't work.
-    browser = webdriver.Firefox(executable_path = paramDict['webdriver'])
-    browser.get("https://www.bing.com/translator")
-    browser.implicitly_wait(30)                     # Global wait, will produce exception if no element is found within 30 secs
+    browser = Browser()                  # Start Browser
+    browser.wait(30)                     # Global wait, will produce exception if no element is found within 30 secs
 
     # Webdriver Manipulation
-    # Select language to Simpified Chinese (what I wanted to listen to)
+    # Select Language to Simpified Chinese (what I wanted to listen to)
     # Since it's a drop list selector with options select element will be use.
+    browser.change_language() # arg = element id
 
-    langSelect = Select(browser.find_element_by_id("tta_srcsl"))                    # Select drop off list
-    langSelect.select_by_visible_text(paramDict['language'])                        # Selecting based on text using variable lang
-    print("Language Selected: ", paramDict['language'])                             # Output current task
-
-    inputText(browser, "Initial Set Up, changing gender voice if needed: ")
-
-    changevoicegen(browser, paramDict['ChangeVoiceToMale'])
-
-    cleartext(browser)
-
-    website = Parse(paramDict['fullchapterurl'])      # Initialize Parse object of website
-
-    inputTextPlayClear(browser, website.splitdata)    # Translate current chapter in fullchapterurl
+    # Translate current chapter in ChapterURL
+    browser.input_text_play_clear(browser.novel_parse.splitdata)    
 
     # Translate next chapter
     # RepeatLoop: updateweb paste start verify clear loop for next chapter (optional)
-    for x in range(1, paramDict['translateNextChapter'] + 1):
+    for x in range(1, KARGS['TRANSLATENEXTCHAPTER'] + 1):
         print("Next Chapter Translating: ")
-        print("URL: ", paramDict['baseurl'] + website.nextpage)
-        website = Parse(paramDict['baseurl'] + website.nextpage)
-        inputTextPlayClear(browser, website.splitdata)
-
+        print("URL: ", KARGS['BASEURL'] + browser.novel_parse.nextpage)
+        browser.novel_parse = Parse(KARGS['BASEURL'] + browser.novel_parse.nextpage)
+        browser.input_text_play_clear(browser.novel_parse.splitdata)
 
 # main execute
 if __name__ == "__main__":
