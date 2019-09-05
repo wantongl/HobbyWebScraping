@@ -31,7 +31,7 @@ Which led to this script made by using Python to automate the process. This a pr
 
 > browser = webdriver.Firefox(executable_path = r'(PUT PATH TO DRIVER HERE)') 
 
-<h4>Extra info:<h4>
+<h4>Extra info:</h4>
   
 <p> The method SoupParseContent() needs to be changed in order to parse correct story text depending on the website in the url.
 
