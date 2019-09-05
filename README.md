@@ -11,7 +11,7 @@ Which led to this script made by using Python to automate the process. This a pr
 </ol>
 
 <h2> SETUP: </h2>
-<p>The script requires the following python modules to work (I recommend you to install in python venv).</p>
+<p>The script requires the following python packages to work (I recommend you to install in python venv).</p>
 
 <h3>requests install:</h3> 
 
@@ -31,7 +31,9 @@ Which led to this script made by using Python to automate the process. This a pr
 
 > browser = webdriver.Firefox(executable_path = r'(PUT PATH TO DRIVER HERE)') 
 
+<h4>Extra info:<h4>
 The method SoupParseContent() needs to be changed in order to parse correct story text depending on the website in the url.
 
-Final note,
+Beatifulsoup supports external parsers like lxml and htmllib5. They all got pros and cons chose them wisely if you want to optimize your program.
+
 Selenium is a really powerful and useful library for automating tasks on browser, it was pretty fun to learn and use.
