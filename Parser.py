@@ -13,7 +13,7 @@ paramDict ={
     "language"              :"Chinese Simplified",
     "webdriver"             :r"C:\Users\00\Downloads\geckodriver\geckodriver.exe", # Need path to selenium's webdriver (firefox/chrome)
     "chaptersizefactor"     :2,          # Integer value 1 or more, Denominator for splitting the chapter into multiple parts (default: 1, translate full chapter)
-    "ChangeVoiceToMale"     :1,          # Optional, 0 to not change, 1 to change
+    "ChangeVoiceToMale"     :0,          # Optional, 0 to not change, 1 to change
     "translateNextChapter"  :0,          # Optional, 0 to not read next chapter. Input n where n > 0 and n is an integer, to read n chapters
 }
 
@@ -30,7 +30,8 @@ class Parse:
         resp = requests.get(link)                                      # Access website with get request
         resp.raise_for_status()                                        # Check if get request worked/downloaded
         txt = resp.text                                                # Convert html code to text
-        soup = BeautifulSoup(txt, "lxml")                              # Convert html text to soup object
+        soup = BeautifulSoup(txt, "html.parser")                       # Convert html text to soup object
+                                                                       # Other external parsers are available(lxml and htmllib5)
         return soup
 
     @staticmethod
@@ -63,13 +64,13 @@ class Parse:
 
 # Input text to the text field on bing
 def inputText(webdriverobj, translateText):
-    bingTextbox = webdriverobj.find_element_by_id("t_sv")
+    bingTextbox = webdriverobj.find_element_by_id("tta_input")
     bingTextbox.send_keys(translateText)
     print("Input Text Completed")
 
 # Start audio translation
 def playaudio(webdriverobj):
-    playButton = webdriverobj.find_element_by_id("t_srcplaycIcon")
+    playButton = webdriverobj.find_element_by_id("tta_playiconsrc")
     playButton.click()
     print("Starting To Translate Audio: ")
 
@@ -91,7 +92,7 @@ def verifyAudioStop(webdriverobj):
 # Clear text
 def cleartext(webdriverobj):
    # (browser.find_element_by_id("t_edc")).click()           # Method 1, clicking the clear button on bing's website.
-    cleartextbox = webdriverobj.find_element_by_id("t_sv")   # Method 2, delete text without reloading bing translate
+    cleartextbox = webdriverobj.find_element_by_id("tta_input")   # Method 2, delete text without reloading bing translate
     cleartextbox.clear()
     print("Clear Text")
 
@@ -138,9 +139,9 @@ def main():
     # Select language to Simpified Chinese (what I wanted to listen to)
     # Since it's a drop list selector with options select element will be use.
 
-    langSelect = Select(browser.find_element_by_id("t_sl"))                  # Select drop off list
-    langSelect.select_by_visible_text(paramDict['language'])                 # Selecting based on text using variable lang
-    print("Language Selected: ", paramDict['language'])                      # Output current task
+    langSelect = Select(browser.find_element_by_id("tta_srcsl"))                    # Select drop off list
+    langSelect.select_by_visible_text(paramDict['language'])                        # Selecting based on text using variable lang
+    print("Language Selected: ", paramDict['language'])                             # Output current task
 
     inputText(browser, "Initial Set Up, changing gender voice if needed: ")
 
