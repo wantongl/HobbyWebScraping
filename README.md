@@ -4,7 +4,7 @@
 Which led to this script made by using Python to automate the process. This a proof of concept example and for personal use. Feel free to modify it and fit to your own needs if anything here inspires you.</p>
 
 <ol>
-<li>The script is made to scape data from https://www.uukanshu.com (where I read light novel chapters). </li> 
+<li>The script is made to scrape data from https://www.uukanshu.com (where I read light novel chapters). </li> 
 <li>Parse and convert the data into readable text.                                                      </li> 
 <li>Open Firefox browser (can be other browsers such as chrome).                                        </li> 
 <li>Uses Bing translator to convert it to audio.                                                        </li> 
